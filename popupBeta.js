@@ -5,6 +5,20 @@ let DogeCamConfiguration = {
     draw_string: null,
 };
 
+/*
+    Switching the API based on browser.
+    Detection: https://stackoverflow.com/questions/9847580/how-to-detect-safari-chrome-ie-firefox-and-opera-browser
+*/
+
+let api_base = null
+
+if(typeof InstallTrigger !== 'undefined'){
+    api_base = browser
+}
+else{
+    api_base = chrome
+}
+
 var canvas = document.getElementById("preview-canvas")
 var img = new Image()
 img.src = 'img/doge_preview.jpg';
@@ -17,7 +31,6 @@ img.onload = function(){
 */
 
 storage_read()
-
 
 /*
 
@@ -83,7 +96,6 @@ function toggle_all_sliders(){
     });
 }
 
-
 document.getElementById("video-ops").addEventListener( "change", function(){
     clear_style_state()
     toggle_filter_types(this.value)
@@ -139,6 +151,7 @@ function read_2DFilter_state(){
             params.push(cur_param)
         }
     });
+
     //  Incase user keeps all 2D-Filters as no-filters too...
     if(styles.length==0){
         DogeCamConfiguration.draw_type = 'no-filter'
@@ -232,35 +245,34 @@ function make_draw_string(draw_style, draw_param){
     return string
 }
 
-
-
 function storage_write(){
-    chrome.storage.sync.set({'DogeCamConfiguration': DogeCamConfiguration},function() {
-            console.log('Settings saved');
+    api_base.storage.sync.set({'DogeCamConfiguration': DogeCamConfiguration},function() {
+            //  console.log('Settings saved');
             console.log("Wrote to Store:", DogeCamConfiguration)
         });
 }
 
 function storage_read(){
-    chrome.storage.sync.get(['DogeCamConfiguration'], function(item) {
+    api_base.storage.sync.get(['DogeCamConfiguration'], function(item) {
         //  console.log('Settings retrieved', item);
-
         //  Don't override the default declaration if not previously stored
-        if( item.DogeCamConfiguration == null || typeof item.DogeCamConfiguration === "undefined") {
-            return
+        storage_present = !(item.DogeCamConfiguration == null || typeof item.DogeCamConfiguration === "undefined")
+        if(storage_present) {
+            DogeCamConfiguration = item.DogeCamConfiguration
+            console.log("Updated Config From Store:", DogeCamConfiguration)
+            set_popup()
         }
-
-        DogeCamConfiguration = item.DogeCamConfiguration
-        console.log("Updated Config From Store:", DogeCamConfiguration)
-        set_popup()
     }); 
 }
 
-/* Only for Mock testing
+/* 
+
+// Only for Mock testing
 document.getElementById('read-btn').addEventListener('click', () => {
     console.log("Read button")
     storage_read()
 });
+
 */
 
 document.getElementById('save-btn').addEventListener('click', () => {
